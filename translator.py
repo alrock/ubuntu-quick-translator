@@ -9,11 +9,46 @@ import urllib
 import urllib2
 import json
 import pygtk
+import time
 pygtk.require('2.0')
 
 gtrans_url = 'http://translate.google.ru/translate_a/t'
-#?client=x&text={TEXT}&sl={LANG_FROM}&tl={LANG_TO}
-language = {'ru': 'en', 'en': 'ru'}
+primary_lang = 'ru'
+secondary_lang = 'en'
+
+language = {primary_lang: secondary_lang, secondary_lang: primary_lang}
+
+#-------------------begin-------------------------
+# Code below was taken from append-hint-example.py
+# http://notify-osd.sourcearchive.com/documentation/0.9.18/append-hint-example_8py-source.html
+
+# Developers: even in Python this is globally nasty :), do something nicer in your own code
+# Me: Oh, it's so difficult
+capabilities = {'actions':                         False,
+            'body':                            False,
+            'body-hyperlinks':                 False,
+            'body-images':                     False,
+            'body-markup':                     False,
+            'icon-multi':                      False,
+            'icon-static':                     False,
+            'sound':                           False,
+            'image/svg+xml':                   False,
+            'x-canonical-private-synchronous': False,
+            'x-canonical-append':              False,
+            'x-canonical-private-icon-only':   False,
+            'x-canonical-truncation':          False}
+
+def initCaps ():
+	caps = pynotify.get_server_caps ()
+	if caps is None:
+		print "Failed to receive server caps."
+		return False
+
+	for cap in caps:
+		capabilities[cap] = True
+	return True
+
+#-------------------end-------------------------
 
 def get_xsel_text(arg = '-p'):
 	xsel = subprocess.Popen(['xsel', arg], stdout=subprocess.PIPE)
@@ -26,16 +61,23 @@ def get_clipboard_text():
 	return get_xsel_text('-b')
 	
 def notify(title, text, image = None):
-	n = pynotify.Notification(title, text, image)
+	global capabilities
+
+	n = pynotify.Notification(title, text + '\n-----', image)
+	if capabilities['x-canonical-append']:
+		n.set_hint_string ("x-canonical-append", "");
+	else:
+		print "The daemon does not support the x-canonical-append hint!"
 	if not n.show():
-		print "Oops. Can't show notify."
+		print "Oops. Can't show the notification."
+	n.close()
 		
 def dnotify(text):
 	notify('Translator', text, 'locale')
 		
 def send_request(text, tl):
 	global gtrans_url
-	text = get_selected_text();
+	#text = get_selected_text();
 	query = urllib.urlencode((('client','x'),('tl',tl)))
 	req = urllib2.Request(gtrans_url + '?' + query, urllib.urlencode((('text', text),)), 
 	             	{'Host': 'www.google.com', 
@@ -65,15 +107,20 @@ def translate(text, tl = 'ru'):
 		except KeyError, IndexError:
 			dnotify("Error. Request failed (parse error)")	
 			return None
-			
-			
-def run():
-	if not pynotify.init("Images Test"):
-		sys.exit(1)
-	
+
+def translate_selected():
 	text = get_selected_text()
 	translate(text)
-	
+
+def init():
+	if not pynotify.init("PyShortcutTranslator"):
+		return False
+	return initCaps()		
+			
+def run():
+	if not init():
+		sys.exit(1)
+	translate_selected()
 
 if __name__ == '__main__':
 	run()
