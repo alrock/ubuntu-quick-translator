@@ -12,7 +12,10 @@ try:
 	s.send(json.dumps({'auto': True}))
 	s.close()
 except socket.error:
+	translator.init()
+	translator.notify('Translator', "Can't connect to server")
 	translator.notify('Translator', "Can't connect to server")
 except TypeError:
+	translator.init()
 	translator.notify('Translator', "Something terrible happens")
 #print 'Received', repr(data)

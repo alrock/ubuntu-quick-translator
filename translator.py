@@ -24,7 +24,7 @@ language = {primary_lang: secondary_lang, secondary_lang: primary_lang}
 
 # Developers: even in Python this is globally nasty :), do something nicer in your own code
 # Me: Oh, it's so difficult
-capabilities = {'actions':                         False,
+capabilities = {'actions':                     False,
             'body':                            False,
             'body-hyperlinks':                 False,
             'body-images':                     False,
@@ -65,7 +65,7 @@ def notify(title, text, image = None):
 
 	n = pynotify.Notification(title, text + '\n-----', image)
 	if capabilities['x-canonical-append']:
-		n.set_hint_string ("x-canonical-append", "");
+		n.set_hint_string ("x-canonical-append", "allowed");
 	else:
 		print "The daemon does not support the x-canonical-append hint!"
 	if not n.show():
@@ -110,7 +110,7 @@ def translate(text, tl = 'ru'):
 
 def translate_selected():
 	text = get_selected_text()
-	translate(text)
+	translate(' '.join(text.split('\n')))
 
 def init():
 	if not pynotify.init("PyShortcutTranslator"):
